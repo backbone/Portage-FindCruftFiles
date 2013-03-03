@@ -2,36 +2,27 @@
 # Finds files not registered in portage
 
 DIRLIST="/bin /etc /lib /lib32 /lib64 /opt /sbin
-`ls /usr/ | grep -vE 'portage|local|src|lost\+found' | sed 's/\(.*\)/\/usr\/\1/'`
-`ls /var/ | grep -vE 'tmp|lost\+found' | sed 's/\(.*\)/\/var\/\1/'`"
+`ls /usr/ | grep -vE 'portage|local|src|lost\+found|i686-[^-]+-mingw32' | sed 's/\(.*\)/\/usr\/\1/'`
+`ls /var/ | grep -vE 'portage|tmp|lost\+found|run|cache|doc|www|log' | sed 's/\(.*\)/\/var\/\1/'`"
 
 EXCLUDES='\\
 ^/etc/make.conf|\\
 ^/etc/portage|\\
-^/usr/opt/android-sdk-update-manager|\\
-^/usr/opt/cuda|\\
-^/usr/lib64/portage|\\
-^/usr/lib64/portage|\\
-^/usr/lib64/gedit-2|\\
+/.git/|\\
+/.hg/|\\
+^/opt/android-sdk-update-manager|\\
+^/opt/cuda|\\
+^/usr/lib/portage|\\
+^/usr/lib/portage|\\
+^/usr/lib/gedit-2|\\
 ^/var/db/pkg|\\
-^/var/lib/layman|\\
-^/var/run|\\
-^/var/cache|\\
-^/var/doc|\\
-^/var/www|\\
-^/var/log|\\
+\\.pyc|\\.pyo|\\
 ^/usr/share/mime'
 
 REPLACES="
-s~^/lib64/grub/~/lib/grub/~ ;
-s~^/usr/lib64/bcc/~/usr/lib/bcc/~ ;
-s~^/usr/lib64/conkeror/~/usr/lib/conkeror/~ ;
-s~^/usr/lib64/debug/~/usr/lib/debug/~ ;
-s~^/usr/lib64/fpc/~/usr/lib/fpc/~ ;
-s~^/usr/lib64/fvwm/~/usr/lib/fvwm/~ ;
-s~^/usr/lib64/gcc/~/usr/lib/gcc/~ ;
-s~^/usr/lib64/gentoolkit/~/usr/lib/gentoolkit/~ ;
+s~\/lib64\/~/lib/~g ;
 s~^/usr/opt/~/opt/~ ;
+s~\/asm-x86\/~/asm/~g ;
 "
 
 #   ===========================================================
@@ -41,13 +32,22 @@ s~^/usr/opt/~/opt/~ ;
 DIRLIST="`echo $DIRLIST`"
 echo "DIRLIST=$DIRLIST"
 
-# exclude current python, perl, kernel modules
-EXCLUDES="$EXCLUDES\|`qlist -ICev python | sed 's~[^0-9]*\([0-9]*\.[0-9]*\).*~\^\/usr\/lib64\/python\1\|\\\\~'`"
+# exclude current perl, kernel modules, layman
+EXCLUDES="$EXCLUDES\|`qlist -ICev perl | sed 's~[^0-9]*\([0-9]*\.[0-9]*\.[0-9]*\).*~\^\/usr\/lib\/perl5/\1\|\\\\~'`"
 EXCLUDES="`echo $EXCLUDES | sed 's~\ ~~g ; s~\\\~~g ; s~|$~~'`"
-EXCLUDES="$EXCLUDES\|`qlist -ICev perl | sed 's~[^0-9]*\([0-9]*\.[0-9]*\.[0-9]*\).*~\^\/usr\/lib64\/perl5/\1\|\\\\~'`"
+EXCLUDES="$EXCLUDES\|^/lib/modules/`uname -r`"
 EXCLUDES="`echo $EXCLUDES | sed 's~\ ~~g ; s~\\\~~g ; s~|$~~'`"
-EXCLUDES="$EXCLUDES\|^`realpath /lib/modules/\`uname -r\``"
+[ -f /etc/layman/layman.cfg ] && LAYMAN_PATH=`grep --color=NO '^storage' /etc/layman/layman.cfg | cut -d: -f2 | tail -c+2` \
+&& EXCLUDES="$EXCLUDES\|^$LAYMAN_PATH"
 EXCLUDES="`echo $EXCLUDES | sed 's~\ ~~g ; s~\\\~~g ; s~|$~~'`"
+
+# exlucde PORTDIR, LOCALDIR, DISTDIR, PKGDIR
+source /etc/make.conf &>/dev/null
+source /etc/portage/make.conf &>/dev/null
+[ "" != "$PORTDIR" ] && EXCLUDES="$EXCLUDES\|^$PORTDIR"
+[ "" != "$LOCALDIR" ] && EXCLUDES="$EXCLUDES\|^$LOCALDIR"
+[ "" != "$DISTDIR" ] && EXCLUDES="$EXCLUDES\|^$DISTDIR"
+[ "" != "$PKGDIR" ] && EXCLUDES="$EXCLUDES\|^$PKGDIR"
 
 # summarize excludes
 echo "EXCLUDES=$EXCLUDES"
@@ -61,10 +61,10 @@ PORTAGE_LIST=/tmp/portage-$RANDOM.lst
 RESULT_LIST=/tmp/result-$RANDOM.lst
 
 echo "Gathering information from portage..."
-qlist / | sort -u >$PORTAGE_LIST
+qlist / | sed "$REPLACES" | sort -u >$PORTAGE_LIST
 
 echo "Gathering information from file system..."
-find -P $DIRLIST -type f 2>/dev/null | grep -vE "$EXCLUDES" | sed "$REPLACES" | sort -u >$CURRENT_LIST
+find -P $DIRLIST -type f 2>/dev/null | sed "$REPLACES" | grep -vE "$EXCLUDES" | sort -u >$CURRENT_LIST
 
 echo "Searching for differences..."
 diff $PORTAGE_LIST $CURRENT_LIST | grep -E '^>' | sed 's/> //' >$RESULT_LIST
