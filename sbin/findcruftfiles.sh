@@ -9,6 +9,7 @@ EXCLUDES='\\
 ^/etc/make.conf|\\
 ^/etc/portage|\\
 ^/etc/libvirt/qemu|\\
+/data/|\\
 /.git/|\\
 /.hg/|\\
 ^/opt/android-sdk-update-manager|\\
