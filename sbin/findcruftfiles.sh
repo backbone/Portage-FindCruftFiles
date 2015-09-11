@@ -22,7 +22,7 @@ EXCLUDES='\\
 ^/usr/share/mime'
 
 REPLACES="
-s~\/lib64\/~/lib/~ ;
+s~\/lib64\/~/lib/~g ;
 s~^/usr/opt/~/opt/~ ;
 s~\/asm-x86\/~/asm/~ ;
 "
