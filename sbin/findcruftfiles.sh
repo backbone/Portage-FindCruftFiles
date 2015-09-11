@@ -22,9 +22,9 @@ EXCLUDES='\\
 ^/usr/share/mime'
 
 REPLACES="
-s~\/lib64\/~/lib/~g ;
+s~\/lib64\/~/lib/~ ;
 s~^/usr/opt/~/opt/~ ;
-s~\/asm-x86\/~/asm/~g ;
+s~\/asm-x86\/~/asm/~ ;
 "
 
 #   ===========================================================
@@ -64,7 +64,7 @@ PORTAGE_LIST=/tmp/portage-$RANDOM.lst
 RESULT_LIST=/tmp/result-$RANDOM.lst
 
 echo "Gathering information from portage..."
-qlist / | sed "$REPLACES" | sort -u >$PORTAGE_LIST
+qlist --showdebug / | sed "$REPLACES" | sort -u >$PORTAGE_LIST
 
 echo "Gathering information from file system..."
 find -P $DIRLIST -type f 2>/dev/null | sed "$REPLACES" | grep -vE "$EXCLUDES" | sort -u >$CURRENT_LIST
