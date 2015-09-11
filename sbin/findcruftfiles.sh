@@ -8,6 +8,7 @@ DIRLIST="/bin /etc /lib /lib32 /lib64 /opt /sbin
 EXCLUDES='\\
 ^/etc/make.conf|\\
 ^/etc/portage|\\
+^/etc/libvirt/qemu|\\
 /.git/|\\
 /.hg/|\\
 ^/opt/android-sdk-update-manager|\\
@@ -16,6 +17,7 @@ EXCLUDES='\\
 ^/usr/lib/portage|\\
 ^/usr/lib/gedit-2|\\
 ^/var/db/pkg|\\
+^/var/lib/libvirt/images|\\
 \\.pyc|\\.pyo|\\
 ^/usr/share/mime'
 
@@ -36,6 +38,7 @@ echo "DIRLIST=$DIRLIST"
 EXCLUDES="$EXCLUDES\|`qlist -ICev perl | sed 's~[^0-9]*\([0-9]*\.[0-9]*\.[0-9]*\).*~\^\/usr\/lib\/perl5/\1\|\\\\~'`"
 EXCLUDES="`echo $EXCLUDES | sed 's~\ ~~g ; s~\\\~~g ; s~|$~~'`"
 EXCLUDES="$EXCLUDES\|^/lib/modules/`uname -r`"
+EXCLUDES="$EXCLUDES\|^/lib/modules/`eselect --brief --color=no kernel list | sed 's~^linux-~~'`"
 EXCLUDES="`echo $EXCLUDES | sed 's~\ ~~g ; s~\\\~~g ; s~|$~~'`"
 [ -f /etc/layman/layman.cfg ] && LAYMAN_PATH=`grep --color=NO '^storage' /etc/layman/layman.cfg | cut -d: -f2 | tail -c+2` \
 && EXCLUDES="$EXCLUDES\|^$LAYMAN_PATH"
